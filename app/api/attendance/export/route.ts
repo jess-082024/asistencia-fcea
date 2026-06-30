@@ -1,8 +1,9 @@
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import * as XLSX from 'xlsx'
 
-export const dynamic = 'force-dynamic'
 
 function fmtFecha(d: Date): string {
   try {
