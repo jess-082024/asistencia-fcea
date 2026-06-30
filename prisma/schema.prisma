@@ -1,0 +1,26 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AttendanceRecord {
+  id            String   @id @default(cuid())
+  fechaClase    DateTime
+  modalidad     String
+  carrera       String
+  grado         String
+  semestre      String
+  asignatura    String
+  inscritos     Int
+  presentes     Int
+  ausentes      Int
+  observaciones String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([createdAt])
+}
