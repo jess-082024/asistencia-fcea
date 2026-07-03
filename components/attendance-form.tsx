@@ -182,7 +182,11 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
           <Select value={semestre} onValueChange={setSemestre}>
             <SelectTrigger><SelectValue placeholder="Selecciona el semestre" /></SelectTrigger>
             <SelectContent>
-              {SEMESTRES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {SEMESTRES.map((s) => (
+                <SelectItem key={s} value={s} disabled={s === 'I Semestre 2026'}>
+                  {s === 'I Semestre 2026' ? `${s} (no disponible)` : s}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
