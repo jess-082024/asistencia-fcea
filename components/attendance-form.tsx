@@ -257,6 +257,16 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
         </div>
 
         <div className={fieldWrap}>
+          <SectionLabel icon={Users}>Cant. inscritos en la asignatura</SectionLabel>
+          <Input
+            type="number" min={0} inputMode="numeric"
+            value={inscritos}
+            onChange={(e) => setInscritos(e.target.value)}
+            placeholder="0"
+          />
+        </div>
+
+        <div className={fieldWrap}>
           <SectionLabel icon={UserCheck}>Cant. presentes</SectionLabel>
           <Input
             type="number" min={0} inputMode="numeric"
