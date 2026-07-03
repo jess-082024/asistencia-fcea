@@ -320,7 +320,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
           Limpiar
         </button>
 
-        <button
+        {/*<button
           onClick={handleUpdateLast}
           disabled={submitting !== null}
           className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#FD011B] px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c80016] hover:shadow-md disabled:opacity-60 sm:flex-none"
@@ -356,7 +356,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
-        </AlertDialog>
+        </AlertDialog>*/}
       </div>
     </motion.div>
   )
