@@ -18,7 +18,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { MODALIDADES, CARRERAS_POR_MODALIDAD, GRADOS, SEMESTRES } from '@/lib/constants'
+import { MODALIDADES, CARRERAS_POR_MODALIDAD, GRADOS, SEMESTRES, ASIGNATURAS } from '@/lib/constants'
 
 function todayISO(): string {
   const d = new Date()
@@ -50,6 +50,10 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
   const [submitting, setSubmitting] = useState<null | 'create' | 'update' | 'delete'>(null)
 
   const carreras = modalidad ? (CARRERAS_POR_MODALIDAD[modalidad] ?? []) : []
+  const asignaturas =
+    modalidad && carrera && grado
+      ? (ASIGNATURAS[modalidad]?.[carrera]?.[grado] ?? [])
+      : []
 
   const ausentes = useMemo(() => {
     const i = parseInt(inscritos, 10)
@@ -82,7 +86,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
     if (!carrera) return 'Selecciona una carrera.'
     if (!grado) return 'Selecciona el grado / año.'
     if (!semestre) return 'Selecciona el semestre.'
-    if (!asignatura.trim()) return 'Ingresa el nombre de la asignatura.'
+    if (!asignatura) return 'Selecciona la asignatura.'
     if (inscritos === '' ) return 'Ingresa la cantidad de inscritos.'
     if (presentes === '') return 'Ingresa la cantidad de presentes.'
     const i = parseInt(inscritos, 10)
@@ -174,15 +178,20 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className={fieldWrap}>
-          <SectionLabel icon={CalendarDays}>Fecha de clase</SectionLabel>
-          <Input type="date" value={fechaClase} onChange={(e) => setFechaClase(e.target.value)} />
+          <SectionLabel icon={CalendarRange}>Semestre</SectionLabel>
+          <Select value={semestre} onValueChange={setSemestre}>
+            <SelectTrigger><SelectValue placeholder="Selecciona el semestre" /></SelectTrigger>
+            <SelectContent>
+              {SEMESTRES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className={fieldWrap}>
           <SectionLabel icon={Layers}>Modalidad</SectionLabel>
           <Select
             value={modalidad}
-            onValueChange={(v) => { setModalidad(v); setCarrera('') }}
+            onValueChange={(v) => { setModalidad(v); setCarrera(''); setAsignatura('') }}
           >
             <SelectTrigger><SelectValue placeholder="Selecciona la modalidad" /></SelectTrigger>
             <SelectContent>
@@ -193,7 +202,11 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
 
         <div className={fieldWrap}>
           <SectionLabel icon={BookOpen}>Carrera</SectionLabel>
-          <Select value={carrera} onValueChange={setCarrera} disabled={!modalidad}>
+          <Select
+            value={carrera}
+            onValueChange={(v) => { setCarrera(v); setAsignatura('') }}
+            disabled={!modalidad}
+          >
             <SelectTrigger>
               <SelectValue placeholder={modalidad ? 'Selecciona la carrera' : 'Primero elige la modalidad'} />
             </SelectTrigger>
@@ -205,7 +218,10 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
 
         <div className={fieldWrap}>
           <SectionLabel icon={GraduationCap}>Grado / Año</SectionLabel>
-          <Select value={grado} onValueChange={setGrado}>
+          <Select
+            value={grado}
+            onValueChange={(v) => { setGrado(v); setAsignatura('') }}
+          >
             <SelectTrigger><SelectValue placeholder="Selecciona el año" /></SelectTrigger>
             <SelectContent>
               {GRADOS.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
@@ -214,32 +230,30 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
         </div>
 
         <div className={fieldWrap}>
-          <SectionLabel icon={CalendarRange}>Semestre</SectionLabel>
-          <Select value={semestre} onValueChange={setSemestre}>
-            <SelectTrigger><SelectValue placeholder="Selecciona el semestre" /></SelectTrigger>
-            <SelectContent>
-              {SEMESTRES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <SectionLabel icon={CalendarDays}>Fecha de clase</SectionLabel>
+          <Input type="date" value={fechaClase} onChange={(e) => setFechaClase(e.target.value)} />
         </div>
 
         <div className={fieldWrap}>
           <SectionLabel icon={BookOpen}>Nombre de asignatura</SectionLabel>
-          <Input
+          <Select
             value={asignatura}
-            onChange={(e) => setAsignatura(e.target.value)}
-            placeholder="Ej. Contabilidad General I"
-          />
-        </div>
-
-        <div className={fieldWrap}>
-          <SectionLabel icon={Users}>Cant. inscritos en la asignatura</SectionLabel>
-          <Input
-            type="number" min={0} inputMode="numeric"
-            value={inscritos}
-            onChange={(e) => setInscritos(e.target.value)}
-            placeholder="0"
-          />
+            onValueChange={setAsignatura}
+            disabled={!modalidad || !carrera || !grado}
+          >
+            <SelectTrigger>
+              <SelectValue
+                placeholder={
+                  !modalidad || !carrera || !grado
+                    ? 'Elige modalidad, carrera y año'
+                    : 'Selecciona la asignatura'
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {asignaturas.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className={fieldWrap}>
