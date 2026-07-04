@@ -261,7 +261,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
         </div>
 
         <div className={fieldWrap}>
-          <SectionLabel icon={Users}>Cant. inscritos en la asignatura</SectionLabel>
+          <SectionLabel icon={Users}>Cantidad inscritos</SectionLabel>
           <Input
             type="number" min={0} inputMode="numeric"
             value={inscritos}
@@ -271,7 +271,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
         </div>
 
         <div className={fieldWrap}>
-          <SectionLabel icon={UserCheck}>Cant. presentes</SectionLabel>
+          <SectionLabel icon={UserCheck}>Cantidad presentes</SectionLabel>
           <Input
             type="number" min={0} inputMode="numeric"
             value={presentes}
@@ -281,7 +281,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
         </div>
 
         <div className={fieldWrap}>
-          <SectionLabel icon={UserX}>Cant. ausentes (automático)</SectionLabel>
+          <SectionLabel icon={UserX}>Cantidad ausentes (automático)</SectionLabel>
           <Input
             value={ausentes}
             readOnly
