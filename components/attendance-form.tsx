@@ -239,7 +239,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
         </div>
 
         <div className={fieldWrap}>
-          <SectionLabel icon={BookOpen}>Nombre de asignatura</SectionLabel>
+          <SectionLabel icon={BookOpen}>Seleccione asignatura</SectionLabel>
           <Select
             value={asignatura}
             onValueChange={setAsignatura}
