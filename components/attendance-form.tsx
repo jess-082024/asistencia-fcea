@@ -234,11 +234,6 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
         </div>
 
         <div className={fieldWrap}>
-          <SectionLabel icon={CalendarDays}>Fecha de clase</SectionLabel>
-          <Input type="date" value={fechaClase} onChange={(e) => setFechaClase(e.target.value)} />
-        </div>
-
-        <div className={fieldWrap}>
           <SectionLabel icon={BookOpen}>Seleccione asignatura</SectionLabel>
           <Select
             value={asignatura}
@@ -260,6 +255,13 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
           </Select>
         </div>
 
+
+        <div className={fieldWrap}>
+          <SectionLabel icon={CalendarDays}>Fecha de clase</SectionLabel>
+          <Input type="date" value={fechaClase} onChange={(e) => setFechaClase(e.target.value)} />
+        </div>
+
+        
         <div className={fieldWrap}>
           <SectionLabel icon={Users}>Cantidad inscritos</SectionLabel>
           <Input
