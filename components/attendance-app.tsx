@@ -27,8 +27,7 @@ export function AttendanceApp() {
 
       <main className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 sm:py-8">
         <p className="mb-5 max-w-2xl text-sm text-[#101F36]/70 sm:text-base">
-          Estimado maestro: Le recordamos la importancia de registrar la asistencia al finalizar cada clase. Esta acción, junto con la posibilidad de consultar o exportar el historial completo, es clave para dar un seguimiento adecuado a nuestros estudiantes y apoyar su proceso de revisión académica.
-        </p>
+          Bienvenido al sistema de segumiento estuduantil, por favor complete los datos.
 
         <div className="sticky top-3 z-20 mb-6 flex w-fit gap-2 rounded-xl bg-white/80 p-1.5 shadow-sm backdrop-blur">
           <button onClick={() => setTab('registro')} className={tabBtn(tab === 'registro')}>
