@@ -15,10 +15,10 @@ export function AttendanceApp() {
   const handleChanged = () => setReloadKey((k) => k + 1)
 
   const tabBtn = (active: boolean) =>
-  [
-    'inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-all',
-    active ? 'bg-[#101F36] text-white shadow-md' : 'bg-white text-[#101F36] shadow-sm hover:bg-[#F4F2F0]',
-  ].join(' ')
+    [
+      'inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-all',
+      active ? 'bg-[#101F36] text-white shadow-md' : 'bg-white text-[#101F36] shadow-sm hover:bg-[#F4F2F0]',
+    ].join(' ')
 
   return (
     <div className="min-h-screen bg-[#D1CCC7]/30">
