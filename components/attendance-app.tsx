@@ -48,8 +48,7 @@ export function AttendanceApp() {
       </main>
 
       <footer className="mx-auto max-w-[1200px] px-4 py-8 text-center text-xs text-[#101F36]/50 sm:px-6">
-        Facultad de Ciencias Económicas y Administrativas · Sistema de Control de Asistencia
-        Todos los derechos reservados © 2026
+        Facultad de Ciencias Económicas y Administrativas · Sistema de Control de Asistencia · Todos los derechos reservados © 2026
       </footer>
     </div>
   )
