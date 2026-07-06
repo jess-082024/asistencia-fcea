@@ -5,11 +5,11 @@ export const MODALIDADES = [
 
 export const CARRERAS_POR_MODALIDAD: Record<string, string[]> = {
   'Modalidad Presencial': [
-    'Administración de Empresas - Presencial',
+    'Administración de Empresas',
     'Marketing y Publicidad',
   ],
   'Modalidad Semipresencial': [
-    'Administración de Empresas - Semipresencial',
+    'Administración de Empresas',
     'Contabilidad y Finanzas',
   ],
 }
@@ -27,13 +27,13 @@ export const SEMESTRES = ['I Semestre 2026', 'II Semestre 2026'] as const
 // Asignaturas según Modalidad -> Carrera -> Año (basado en el Excel FCE)
 export const ASIGNATURAS: Record<string, Record<string, Record<string, string[]>>> = {
   'Modalidad Presencial': {
-    'Administración de Empresas - Presencial': {
+    'Administración de Empresas': {
       'Primer año': [
         'Historia e Identidad Nacional',
         'Matemática Aplicada para la Administración II',
         'Comunicación Técnica',
         'Inglés A1.2',
-        'Marketing I',
+        'Marketing II',
         'Contabilidad',
       ],
       'Segundo año': [
@@ -75,35 +75,35 @@ export const ASIGNATURAS: Record<string, Record<string, Record<string, string[]>
         'Inteligencia Artificial Aplicada al Marketing',
       ],
       'Segundo año': [
-        'Estadística Aplicada al Marketing',
-        'Liderazgo e Inteligencia Emocional',
-        'Análisis de Costos y Precios I',
-        'Publicidad ATL',
-        'Metodología de Investigación Científica',
-        'Macroeconomía',
-        'Inglés III',
+        'Gestión Financiera',
+        'Fundamentos de Filosofía',
+        'Microeconomía',
+        'Publicidad BTL',
+        'Análisis de Costos y Precios II',
+        'E-commerce / E-Business',
+        'Inglés IV',
       ],
       'Tercer año': [
-        'Comportamiento del Consumidor y Neuromarketing',
-        'Marketing de Contenido',
-        'Inglés V',
-        'Marco Legal del MK & Pub',
-        'Eventos y Relaciones Públicas',
-        'Taller de Presupuesto',
-        'Fund. Teológicos y Soc. de la Vida',
+        'Marketing Digital',
+        'Diseño Publicitario Integral I',
+        'Logística y Abastecimiento',
+        'Investigación de Mercados',
+        'Administración de las Fuerzas de Ventas',
+        'Gestión de Recursos Humanos',
+        'Inglés VI',
       ],
       'Cuarto año': [
-        'Plan Integral de Marketing',
-        'Innovación y Emprendimiento',
-        'Marketing de Servicios',
-        'Promoción de Ventas',
-        'Diseño Publicitario Integral II',
-        'Ética y Resp. Social',
+        'Plan de Negocios',
+        'Marketing de Turismo',
+        'Marketing Social',
+        'Imagen e Identidad Corporativa',
+        'Campaña Pblicitaria',
+        'Marketing y Comercio Internacional',
       ],
     },
   },
   'Modalidad Semipresencial': {
-    'Administración de Empresas - Semipresencial': {
+    'Administración de Empresas ': {
       'Primer año': [
         'Matemática Aplicada a la Administración II',
         'Fundamentos de Administración y Comportamiento Organizacional',

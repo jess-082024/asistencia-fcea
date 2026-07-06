@@ -27,8 +27,8 @@ export function AttendanceApp() {
 
       <main className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 sm:py-8">
         <p className="mb-5 max-w-2xl text-sm text-[#101F36]/70 sm:text-base">
-          Registra la asistencia de cada clase y consulta o exporta el historial completo de
-          asistencia para revisión académica.
+          Estimado maestro: Le recordamos la importancia de registrar la asistencia al finalizar cada clase.
+           Esta acción, junto con la posibilidad de consultar o exportar el historial completo, es clave para dar un seguimiento adecuado a nuestros estudiantes y apoyar su proceso de revisión académica.
         </p>
 
         <div className="sticky top-3 z-20 mb-6 flex w-fit gap-2 rounded-xl bg-white/80 p-1.5 shadow-sm backdrop-blur">
@@ -51,6 +51,7 @@ export function AttendanceApp() {
 
       <footer className="mx-auto max-w-[1200px] px-4 py-8 text-center text-xs text-[#101F36]/50 sm:px-6">
         Facultad de Ciencias Económicas y Administrativas · Sistema de Control de Asistencia
+        Todos los derechos reservados © 2026
       </footer>
     </div>
   )

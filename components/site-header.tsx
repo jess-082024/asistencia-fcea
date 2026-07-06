@@ -24,7 +24,7 @@ export function SiteHeader() {
             <div className="mt-1 flex items-center gap-2 text-[#E3AE50]">
               <ClipboardList className="h-4 w-4 shrink-0" />
               <span className="text-xs font-semibold uppercase tracking-wide sm:text-sm">
-                Registro de Asistencia Estudiantil
+                Registro de reporte de asistencia de estudiantes
               </span>
             </div>
           </div>
