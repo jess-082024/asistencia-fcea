@@ -20,6 +20,42 @@ function fmtFecha(iso: string): string {
   }
 }
 
+/** Normaliza el campo de carnets a un array de strings válidos (8 dígitos) */
+function parseCarnets(input: any): string[] {
+  if (input === undefined || input === null) return []
+
+  if (Array.isArray(input)) {
+    return input
+      .map((x) => String(x).trim())
+      .map((s) => s.replace(/\D/g, '').slice(0, 8))
+      .filter((s) => /^\d{8}$/.test(s))
+  }
+
+  if (typeof input === 'string') {
+    const s = input.trim()
+    if (!s) return []
+
+    // intentar parsear JSON (p. ej. '["12345678","87654321"]')
+    try {
+      const parsed = JSON.parse(s)
+      if (Array.isArray(parsed)) return parseCarnets(parsed)
+    } catch {
+      // no es JSON, continuar
+    }
+
+    // intentar CSV: '12345678,87654321'
+    return s
+      .split(',')
+      .map((x) => x.trim())
+      .map((s2) => s2.replace(/\D/g, '').slice(0, 8))
+      .filter((s2) => /^\d{8}$/.test(s2))
+  }
+
+  // cualquier otro tipo -> intentar convertir a string
+  const single = String(input).replace(/\D/g, '').slice(0, 8)
+  return /^\d{8}$/.test(single) ? [single] : []
+}
+
 export interface RecordsTableHandle {
   refresh: () => void
 }
@@ -75,7 +111,7 @@ export function RecordsTable({ reloadKey }: { reloadKey: number }) {
     }
   }
 
-  const cols = ['Fecha', 'Modalidad', 'Carrera', 'Año', 'Semestre', 'Asignatura', 'Inscritos', 'Presentes', 'Ausentes', 'Observaciones']
+  const cols = ['Fecha', 'Modalidad', 'Carrera', 'Año', 'Semestre', 'Asignatura', 'Inscritos', 'Presentes', 'Ausentes', 'Carnets', 'Observaciones']
 
   return (
     <motion.div
@@ -133,23 +169,31 @@ export function RecordsTable({ reloadKey }: { reloadKey: number }) {
                 </tr>
               </thead>
               <tbody>
-                {(records ?? []).map((r, idx) => (
-                  <tr
-                    key={r?.id ?? idx}
-                    className={`align-top transition-colors hover:bg-[#E3AE50]/10 ${idx % 2 === 0 ? 'bg-white' : 'bg-[#F4F2F0]'}`}
-                  >
-                    <td className="whitespace-nowrap px-3 py-3 font-mono">{fmtFecha(r?.fechaClase)}</td>
-                    <td className="px-3 py-3">{r?.modalidad ?? '—'}</td>
-                    <td className="px-3 py-3">{r?.carrera ?? '—'}</td>
-                    <td className="whitespace-nowrap px-3 py-3">{r?.grado ?? '—'}</td>
-                    <td className="whitespace-nowrap px-3 py-3">{r?.semestre ?? '—'}</td>
-                    <td className="px-3 py-3">{r?.asignatura ?? '—'}</td>
-                    <td className="px-3 py-3 text-center font-mono">{r?.inscritos ?? 0}</td>
-                    <td className="px-3 py-3 text-center font-mono text-[#16A34A]">{r?.presentes ?? 0}</td>
-                    <td className="px-3 py-3 text-center font-mono text-[#FD011B]">{r?.ausentes ?? 0}</td>
-                    <td className="max-w-[260px] px-3 py-3 text-[#101F36]/70">{r?.observaciones || '—'}</td>
-                  </tr>
-                ))}
+                {(records ?? []).map((r, idx) => {
+                  // normalizar carnets (soporta carnetausentes o carnetAusentes)
+                  const raw = (r as any).carnetAusentes ?? (r as any).carnetausentes ?? []
+                  const arr = parseCarnets(raw)
+                  const carnetsText = arr.length ? arr.join(', ') : '—'
+
+                  return (
+                    <tr
+                      key={r?.id ?? idx}
+                      className={`align-top transition-colors hover:bg-[#E3AE50]/10 ${idx % 2 === 0 ? 'bg-white' : 'bg-[#F4F2F0]'}`}
+                    >
+                      <td className="whitespace-nowrap px-3 py-3 font-mono">{fmtFecha(r?.fechaClase)}</td>
+                      <td className="px-3 py-3">{r?.modalidad ?? '—'}</td>
+                      <td className="px-3 py-3">{r?.carrera ?? '—'}</td>
+                      <td className="whitespace-nowrap px-3 py-3">{r?.grado ?? '—'}</td>
+                      <td className="whitespace-nowrap px-3 py-3">{r?.semestre ?? '—'}</td>
+                      <td className="px-3 py-3">{r?.asignatura ?? '—'}</td>
+                      <td className="px-3 py-3 text-center font-mono">{r?.inscritos ?? 0}</td>
+                      <td className="px-3 py-3 text-center font-mono text-[#16A34A]">{r?.presentes ?? 0}</td>
+                      <td className="px-3 py-3 text-center font-mono text-[#FD011B]">{r?.ausentes ?? 0}</td>
+                      <td className="max-w-[260px] px-3 py-3 text-[#101F36]/70 break-words">{carnetsText}</td>
+                      <td className="max-w-[260px] px-3 py-3 text-[#101F36]/70">{r?.observaciones || '—'}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
