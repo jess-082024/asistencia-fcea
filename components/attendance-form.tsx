@@ -58,6 +58,19 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
       ? (ASIGNATURAS[modalidad]?.[carrera]?.[grado] ?? [])
       : []
 
+  // <-- Punto 3: derivar los grados disponibles desde ASIGNATURAS si existen,
+  // fallback a GRADOS global si no hay definición para la combinación seleccionada.
+  const gradosDisponibles = useMemo(() => {
+    if (modalidad && carrera) {
+      const mapa = (ASIGNATURAS as any)[modalidad]?.[carrera]
+      if (mapa && typeof mapa === 'object') {
+        const keys = Object.keys(mapa)
+        if (keys.length) return keys
+      }
+    }
+    return GRADOS
+  }, [modalidad, carrera])
+
   const ausentes = useMemo(() => {
     const i = parseInt(inscritos, 10)
     const p = parseInt(presentes, 10)
@@ -220,7 +233,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
           <SectionLabel icon={Layers}>Modalidad</SectionLabel>
           <Select
             value={modalidad}
-            onValueChange={(v) => { setModalidad(v); setCarrera(''); setAsignatura('') }}
+            onValueChange={(v) => { setModalidad(v); setCarrera(''); setAsignatura(''); setGrado('') }}
           >
             <SelectTrigger><SelectValue placeholder="Selecciona la modalidad" /></SelectTrigger>
             <SelectContent>
@@ -233,7 +246,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
           <SectionLabel icon={BookOpen}>Carrera</SectionLabel>
           <Select
             value={carrera}
-            onValueChange={(v) => { setCarrera(v); setAsignatura('') }}
+            onValueChange={(v) => { setCarrera(v); setAsignatura(''); setGrado('') }}
             disabled={!modalidad}
           >
             <SelectTrigger>
@@ -253,7 +266,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
           >
             <SelectTrigger><SelectValue placeholder="Selecciona el año" /></SelectTrigger>
             <SelectContent>
-              {GRADOS.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+              {gradosDisponibles.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -379,46 +392,6 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
           <Eraser className="h-4 w-4" />
           Limpiar
         </button>
-
-        {/* Comentados: botones de Actualizar último y Eliminar último (se mantienen como en tu versión original)
-        <button
-          onClick={handleUpdateLast}
-          disabled={submitting !== null}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#FD011B] px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c80016] hover:shadow-md disabled:opacity-60 sm:flex-none"
-        >
-          {submitting === 'update' ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          Actualizar último
-        </button>
-
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <button
-              disabled={submitting !== null}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-[#FD011B] bg-white px-5 py-3 text-sm font-semibold text-[#FD011B] shadow-sm transition-all hover:bg-[#FD011B] hover:text-white hover:shadow-md disabled:opacity-60 sm:flex-none"
-            >
-              <Trash2 className="h-4 w-4" />
-              Eliminar último
-            </button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>¿Eliminar el último registro?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta acción eliminará permanentemente el registro más reciente guardado. No se puede deshacer.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteLast}
-                className="bg-[#FD011B] text-white hover:bg-[#c80016]"
-              >
-                Eliminar
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        */}
       </div>
     </motion.div>
   )
