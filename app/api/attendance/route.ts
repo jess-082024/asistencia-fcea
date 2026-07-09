@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
         presentes: pres,
         ausentes: insc - pres,
         observaciones: observationsToNull(observaciones),
-        carnetAusentes: carnets,
+        carnetausentes: carnets,
       },
     })
 

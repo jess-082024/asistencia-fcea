@@ -112,7 +112,7 @@ export async function PUT(req: NextRequest) {
         presentes: pres,
         ausentes: insc - pres,
         observaciones: observationsToNull(observaciones),
-        carnetAusentes: carnets,
+        carnetausentes: carnets,
       },
     })
 
