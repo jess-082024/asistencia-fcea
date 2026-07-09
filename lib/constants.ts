@@ -25,12 +25,13 @@ export const GRADOS = [
 export const SEMESTRES = ['I Semestre 2026', 'II Semestre 2026'] as const
 
 // Asignaturas según Modalidad -> Carrera -> Año (basado en el Excel FCE)
+// NOTA: claves EXACTAS deben coincidir con los valores usados en los <select>
 export const ASIGNATURAS: Record<string, Record<string, Record<string, string[]>>> = {
   'Modalidad Presencial': {
     'Administración de Empresas': {
       'Primer año': [
         'Historia e Identidad Nacional',
-        'Matemática Aplicada para la Administración II',
+        'Matemática Aplicada a la Administración II',
         'Comunicación Técnica',
         'Inglés A1.2',
         'Marketing II',
@@ -63,6 +64,7 @@ export const ASIGNATURAS: Record<string, Record<string, Record<string, string[]>
         'Gerencia Estratégica',
         'Desarrollo Empresarial',
       ],
+      'Quinto año': [], // si corresponde
     },
     'Marketing y Publicidad': {
       'Primer año': [
@@ -97,13 +99,14 @@ export const ASIGNATURAS: Record<string, Record<string, Record<string, string[]>
         'Marketing de Turismo',
         'Marketing Social',
         'Imagen e Identidad Corporativa',
-        'Campaña Pblicitaria',
+        'Campaña Publicitaria',
         'Marketing y Comercio Internacional',
       ],
+      'Quinto año': [],
     },
   },
   'Modalidad Semipresencial': {
-    'Administración de Empresas ': {
+    'Administración de Empresas': { // <-- quitado espacio final aquí
       'Primer año': [
         'Matemática Aplicada a la Administración II',
         'Fundamentos de Administración y Comportamiento Organizacional',
@@ -156,6 +159,9 @@ export const ASIGNATURAS: Record<string, Record<string, Record<string, string[]>
         'Fundamentos de Filosofía',
         'Contabilidad de Costos II',
       ],
+      'Tercer año': [],
+      'Cuarto año': [],
+      'Quinto año': [],
     },
   },
 }
