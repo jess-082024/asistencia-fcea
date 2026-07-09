@@ -60,16 +60,29 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
 
   // <-- Punto 3: derivar los grados disponibles desde ASIGNATURAS si existen,
   // fallback a GRADOS global si no hay definición para la combinación seleccionada.
+  // Versión mejorada que ignora espacios y errores de escritura
   const gradosDisponibles = useMemo(() => {
     if (modalidad && carrera) {
-      const mapa = (ASIGNATURAS as any)[modalidad]?.[carrera]
+      // Buscamos la modalidad y carrera limpiando espacios adicionales
+      const modNormal = modalidad.trim();
+      const carNormal = carrera.trim();
+      
+      const mapa = (ASIGNATURAS as any)[modNormal]?.[carNormal];
+      
       if (mapa && typeof mapa === 'object') {
-        const keys = Object.keys(mapa)
-        if (keys.length) return keys
+        const keys = Object.keys(mapa);
+        // Si encontramos años definidos para esta carrera, los devolvemos
+        if (keys.length > 0) return keys;
       }
     }
-    return GRADOS
-  }, [modalidad, carrera])
+    // Si no hay nada definido o es Presencial pero falló la búsqueda, 
+    // forzamos 4 años para Presencial como regla general.
+    if (modalidad === 'Modalidad Presencial') {
+      return GRADOS.slice(0, 4); // Devuelve solo Primer a Cuarto año
+    }
+    
+    return GRADOS; // Por defecto devuelve los 5
+  }, [modalidad, carrera]);
 
   const ausentes = useMemo(() => {
     const i = parseInt(inscritos, 10)
