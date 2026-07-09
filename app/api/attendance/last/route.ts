@@ -3,34 +3,49 @@ import { prisma } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
-/** Reusa el parser de carnets (mismo comportamiento que en route.ts) */
 function parseCarnets(input: any): string[] {
   if (input === undefined || input === null) return []
+
   if (Array.isArray(input)) {
     return input
-      .map((x) => (typeof x === 'string' ? x.trim() : String(x)))
-      .map((s) => s.replace(/\D/g, '').slice(0, 8))
-      .filter((s) => /^\d{8}$/.test(s))
+      .map((x) => String(x).trim())
+      .filter((x) => /^\d{8}$/.test(x))
   }
+
   if (typeof input === 'string') {
-    const trimmed = input.trim()
+    const s = input.trim()
+    if (!s) return []
+
     try {
-      const parsed = JSON.parse(trimmed)
-      if (Array.isArray(parsed)) return parseCarnets(parsed as any)
+      const parsed = JSON.parse(s)
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((x) => String(x).trim())
+          .filter((x) => /^\d{8}$/.test(x))
+      }
     } catch {}
-    return trimmed
+
+    return s
       .split(',')
-      .map((s) => s.replace(/\D/g, '').slice(0, 8))
-      .filter((s) => /^\d{8}$/.test(s))
+      .map((x) => x.trim())
+      .filter((x) => /^\d{8}$/.test(x))
   }
-  const s = String(input).replace(/\D/g, '').slice(0, 8)
-  return /^\d{8}$/.test(s) ? [s] : []
+
+  return []
+}
+
+function observationsToNull(v: any) {
+  if (v === undefined || v === null) return null
+  const s = String(v).trim()
+  return s ? s : null
 }
 
 export async function DELETE() {
   try {
     const last = await prisma.attendanceRecord.findFirst({ orderBy: { createdAt: 'desc' } })
-    if (!last) return NextResponse.json({ error: 'No hay registros.' }, { status: 404 })
+    if (!last) {
+      return NextResponse.json({ error: 'No hay registros.' }, { status: 404 })
+    }
 
     await prisma.attendanceRecord.delete({ where: { id: last.id } })
     return NextResponse.json({ success: true })
@@ -43,32 +58,46 @@ export async function DELETE() {
 export async function PUT(req: NextRequest) {
   try {
     const last = await prisma.attendanceRecord.findFirst({ orderBy: { createdAt: 'desc' } })
-    if (!last) return NextResponse.json({ error: 'No hay registros.' }, { status: 404 })
+    if (!last) {
+      return NextResponse.json({ error: 'No hay registros.' }, { status: 404 })
+    }
 
     const body = await req.json().catch(() => ({}))
-    console.log('PUT /api/attendance/last body:', JSON.stringify(body))
+    console.log('PUT /api/attendance/last body:', body)
+
     const {
-      fechaClase, modalidad, carrera, grado, semestre,
-      asignatura, inscritos, presentes, observaciones, carnetAusentes,
+      fechaClase,
+      modalidad,
+      carrera,
+      grado,
+      semestre,
+      asignatura,
+      inscritos,
+      presentes,
+      observaciones,
+      carnetAusentes,
     } = body ?? {}
 
-    if (!fechaClase || !modalidad || !carrera || !grado || !semestre || !asignatura) {
+    if (
+      !fechaClase || !modalidad || !carrera || !grado || !semestre ||
+      !asignatura || inscritos === undefined || inscritos === null ||
+      presentes === undefined || presentes === null
+    ) {
       return NextResponse.json({ error: 'Faltan campos obligatorios.' }, { status: 400 })
     }
 
     const insc = Number(inscritos)
     const pres = Number(presentes)
+
     if (!Number.isFinite(insc) || !Number.isFinite(pres) || insc < 0 || pres < 0) {
-      return NextResponse.json({ error: 'Inscritos y presentes deben ser números válidos y no negativos.' }, { status: 400 })
+      return NextResponse.json({ error: 'Inscritos y presentes deben ser números válidos.' }, { status: 400 })
     }
+
     if (pres > insc) {
       return NextResponse.json({ error: 'Los presentes no pueden ser mayores que los inscritos.' }, { status: 400 })
     }
 
     const carnets = parseCarnets(carnetAusentes)
-    if ((carnetAusentes !== undefined && carnetAusentes !== null) && carnets.length === 0) {
-      return NextResponse.json({ error: 'Formato de carnets inválido o ninguno cumple 8 dígitos.' }, { status: 400 })
-    }
 
     const record = await prisma.attendanceRecord.update({
       where: { id: last.id },
@@ -90,16 +119,6 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ record })
   } catch (error) {
     console.error('PUT /api/attendance/last error:', error)
-    return NextResponse.json({ error: 'No se pudo actualizar el último registro.' }, { status: 500 })
-  }
-}
-
-function observationsToNull(v: any) {
-  if (v === undefined || v === null) return null
-  try {
-    const s = String(v).trim()
-    return s.length ? s : null
-  } catch {
-    return null
+    return NextResponse.json({ error: 'Error al actualizar.' }, { status: 500 })
   }
 }
