@@ -47,7 +47,9 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
   const [inscritos, setInscritos] = useState('')
   const [presentes, setPresentes] = useState('')
   const [observaciones, setObservaciones] = useState('')
-  const [carnetAusentes, setCarnetAusentes] = useState('') // nuevo campo
+  // nuevos estados para múltiples carnets
+  const [carnetInput, setCarnetInput] = useState('')
+  const [carnetsAusentes, setCarnetsAusentes] = useState<string[]>([])
   const [submitting, setSubmitting] = useState<null | 'create' | 'update' | 'delete'>(null)
 
   const carreras = modalidad ? (CARRERAS_POR_MODALIDAD[modalidad] ?? []) : []
@@ -74,12 +76,31 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
     setInscritos('')
     setPresentes('')
     setObservaciones('')
-    setCarnetAusentes('')
+    setCarnetInput('')
+    setCarnetsAusentes([])
   }
 
   const handleClear = () => {
     resetForm()
     toast.success('Formulario limpiado.')
+  }
+
+  const addCarnet = () => {
+    const v = carnetInput.replace(/\D/g, '').slice(0, 8)
+    if (!/^\d{8}$/.test(v)) {
+      toast.error('El carnet debe tener exactamente 8 dígitos.')
+      return
+    }
+    if (carnetsAusentes.includes(v)) {
+      toast.error('Ese carnet ya fue agregado.')
+      return
+    }
+    setCarnetsAusentes((s) => [...s, v])
+    setCarnetInput('')
+  }
+
+  const removeCarnet = (c: string) => {
+    setCarnetsAusentes((s) => s.filter(x => x !== c))
   }
 
   const validate = (): string | null => {
@@ -96,8 +117,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
     if (!Number.isFinite(i) || i < 0) return 'La cantidad de inscritos no es válida.'
     if (!Number.isFinite(p) || p < 0) return 'La cantidad de presentes no es válida.'
     if (p > i) return 'Los presentes no pueden ser mayores que los inscritos.'
-    // Validación del carnet: si hay contenido, debe ser exactamente 8 dígitos
-    if (carnetAusentes && !/^\d{8}$/.test(carnetAusentes)) return 'El carnet de ausente debe tener exactamente 8 dígitos.'
+    if (carnetsAusentes.some(c => !/^\d{8}$/.test(c))) return 'Uno o más carnets no son válidos (8 dígitos).'
     return null
   }
 
@@ -111,7 +131,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
     inscritos: parseInt(inscritos, 10),
     presentes: parseInt(presentes, 10),
     observaciones: observaciones.trim() || null,
-    carnetAusentes: carnetAusentes || null, // incluido en el payload
+    carnetAusentes: carnetsAusentes, // ahora es string[]
   })
 
   const handleSubmit = async () => {
@@ -260,11 +280,13 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
           </Select>
         </div>
 
+
         <div className={fieldWrap}>
           <SectionLabel icon={CalendarDays}>Fecha de clase</SectionLabel>
           <Input type="date" value={fechaClase} onChange={(e) => setFechaClase(e.target.value)} />
         </div>
 
+        
         <div className={fieldWrap}>
           <SectionLabel icon={Users}>Cantidad inscritos</SectionLabel>
           <Input
@@ -296,24 +318,36 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
           />
         </div>
 
-        {/* Carnet de estudiante ausente (ocupa el espacio a la derecha de Ausentes) */}
+        {/* Carnets de estudiantes ausentes (inputs dinámicos) */}
         <div className={fieldWrap}>
-          <SectionLabel icon={UserX}>Carnet de estudiantes ausentes</SectionLabel>
-          <Input
-            type="text"
-            inputMode="numeric"
-            maxLength={8}
-            placeholder="8 dígitos (ej: 20210542)"
-            value={carnetAusentes}
-            onChange={(e) => {
-              const val = e.target.value.replace(/\D/g, '').slice(0, 8)
-              setCarnetAusentes(val)
-            }}
-            className={`w-full ${carnetAusentes.length > 0 && carnetAusentes.length !== 8 ? 'border-red-500 ring-1 ring-red-500' : ''}`}
-          />
-          {carnetAusentes.length > 0 && carnetAusentes.length !== 8 && (
-            <p className="text-xs text-red-500 mt-1">Debe tener exactamente 8 dígitos</p>
-          )}
+          <SectionLabel icon={UserX}>Carnet(s) estudiantes ausentes</SectionLabel>
+
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              inputMode="numeric"
+              maxLength={8}
+              placeholder="Agregar carnet (8 dígitos)"
+              value={carnetInput}
+              onChange={(e) => setCarnetInput(e.target.value.replace(/\D/g, '').slice(0, 8))}
+            />
+            <button
+              type="button"
+              onClick={addCarnet}
+              className="inline-flex items-center px-3 py-2 rounded bg-[#101F36] text-white text-sm"
+            >
+              Agregar
+            </button>
+          </div>
+
+          <div className="mt-2 flex flex-wrap gap-2">
+            {carnetsAusentes.map((c) => (
+              <span key={c} className="flex items-center gap-2 rounded-full bg-[#E3AE50]/20 px-3 py-1 text-sm">
+                <span className="font-mono">{c}</span>
+                <button onClick={() => removeCarnet(c)} className="text-sm text-red-600">x</button>
+              </span>
+            ))}
+          </div>
         </div>
 
         <div className={`${fieldWrap} md:col-span-2`}>

@@ -18,7 +18,7 @@ model AttendanceRecord {
   inscritos     Int
   presentes     Int
   ausentes      Int
-  carnetAusentes String?
+  carnetausentes String[]
   observaciones String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
     const pageSize = Math.min(50, Math.max(1, parseInt(searchParams.get('pageSize') || '10', 10) || 10))
 
     const [records, total] = await Promise.all([
+      // USAMOS AttendanceRecord con 'A' mayúscula
       prisma.attendanceRecord.findMany({
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
@@ -29,34 +30,18 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
     const {
-      fechaClase,
-      modalidad,
-      carrera,
-      grado,
-      semestre,
-      asignatura,
-      inscritos,
-      presentes,
-      observaciones,
+      fechaClase, modalidad, carrera, grado, semestre,
+      asignatura, inscritos, presentes, observaciones, carnetAusentes,
     } = body ?? {}
 
-    if (
-      !fechaClase || !modalidad || !carrera || !grado || !semestre ||
-      !asignatura || inscritos === undefined || inscritos === null ||
-      presentes === undefined || presentes === null
-    ) {
-      return NextResponse.json({ error: 'Todos los campos son obligatorios excepto Observaciones.' }, { status: 400 })
+    if (!fechaClase || !modalidad || !carrera || !grado || !semestre || !asignatura) {
+      return NextResponse.json({ error: 'Faltan campos obligatorios.' }, { status: 400 })
     }
 
     const insc = Number(inscritos)
     const pres = Number(presentes)
-    if (!Number.isFinite(insc) || !Number.isFinite(pres) || insc < 0 || pres < 0) {
-      return NextResponse.json({ error: 'Las cantidades deben ser números válidos.' }, { status: 400 })
-    }
-    if (pres > insc) {
-      return NextResponse.json({ error: 'Los presentes no pueden ser mayores que los inscritos.' }, { status: 400 })
-    }
-
+    
+    // USAMOS AttendanceRecord con 'A' mayúscula
     const record = await prisma.attendanceRecord.create({
       data: {
         fechaClase: new Date(fechaClase),
@@ -69,6 +54,7 @@ export async function POST(req: NextRequest) {
         presentes: pres,
         ausentes: insc - pres,
         observaciones: observaciones ? String(observaciones) : null,
+        carnetAusentes: Array.isArray(carnetAusentes) ? carnetAusentes : [],
       },
     })
 
