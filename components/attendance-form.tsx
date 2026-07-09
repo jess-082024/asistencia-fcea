@@ -47,6 +47,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
   const [inscritos, setInscritos] = useState('')
   const [presentes, setPresentes] = useState('')
   const [observaciones, setObservaciones] = useState('')
+  const [carnetAusentes, setCarnetAusentes] = useState('') // nuevo campo
   const [submitting, setSubmitting] = useState<null | 'create' | 'update' | 'delete'>(null)
 
   const carreras = modalidad ? (CARRERAS_POR_MODALIDAD[modalidad] ?? []) : []
@@ -73,6 +74,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
     setInscritos('')
     setPresentes('')
     setObservaciones('')
+    setCarnetAusentes('')
   }
 
   const handleClear = () => {
@@ -94,6 +96,8 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
     if (!Number.isFinite(i) || i < 0) return 'La cantidad de inscritos no es válida.'
     if (!Number.isFinite(p) || p < 0) return 'La cantidad de presentes no es válida.'
     if (p > i) return 'Los presentes no pueden ser mayores que los inscritos.'
+    // Validación del carnet: si hay contenido, debe ser exactamente 8 dígitos
+    if (carnetAusentes && !/^\d{8}$/.test(carnetAusentes)) return 'El carnet de ausente debe tener exactamente 8 dígitos.'
     return null
   }
 
@@ -107,6 +111,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
     inscritos: parseInt(inscritos, 10),
     presentes: parseInt(presentes, 10),
     observaciones: observaciones.trim() || null,
+    carnetAusentes: carnetAusentes || null, // incluido en el payload
   })
 
   const handleSubmit = async () => {
@@ -255,13 +260,11 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
           </Select>
         </div>
 
-
         <div className={fieldWrap}>
           <SectionLabel icon={CalendarDays}>Fecha de clase</SectionLabel>
           <Input type="date" value={fechaClase} onChange={(e) => setFechaClase(e.target.value)} />
         </div>
 
-        
         <div className={fieldWrap}>
           <SectionLabel icon={Users}>Cantidad inscritos</SectionLabel>
           <Input
@@ -282,6 +285,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
           />
         </div>
 
+        {/* Cantidad ausentes (automático) */}
         <div className={fieldWrap}>
           <SectionLabel icon={UserX}>Cantidad ausentes (automático)</SectionLabel>
           <Input
@@ -290,6 +294,26 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
             placeholder="Se calcula automáticamente"
             className="cursor-not-allowed bg-[#D1CCC7]/40 font-mono font-semibold text-[#101F36]"
           />
+        </div>
+
+        {/* Carnet de estudiante ausente (ocupa el espacio a la derecha de Ausentes) */}
+        <div className={fieldWrap}>
+          <SectionLabel icon={UserX}>Carnet de estudiantes ausentes</SectionLabel>
+          <Input
+            type="text"
+            inputMode="numeric"
+            maxLength={8}
+            placeholder="8 dígitos (ej: 20210542)"
+            value={carnetAusentes}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, '').slice(0, 8)
+              setCarnetAusentes(val)
+            }}
+            className={`w-full ${carnetAusentes.length > 0 && carnetAusentes.length !== 8 ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+          />
+          {carnetAusentes.length > 0 && carnetAusentes.length !== 8 && (
+            <p className="text-xs text-red-500 mt-1">Debe tener exactamente 8 dígitos</p>
+          )}
         </div>
 
         <div className={`${fieldWrap} md:col-span-2`}>
@@ -322,7 +346,8 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
           Limpiar
         </button>
 
-        {/*<button
+        {/* Comentados: botones de Actualizar último y Eliminar último (se mantienen como en tu versión original)
+        <button
           onClick={handleUpdateLast}
           disabled={submitting !== null}
           className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#FD011B] px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c80016] hover:shadow-md disabled:opacity-60 sm:flex-none"
@@ -358,7 +383,8 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
-        </AlertDialog>*/}
+        </AlertDialog>
+        */}
       </div>
     </motion.div>
   )
