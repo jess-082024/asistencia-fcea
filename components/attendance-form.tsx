@@ -52,6 +52,11 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
   const [carnetsAusentes, setCarnetsAusentes] = useState<string[]>([])
   const [submitting, setSubmitting] = useState<null | 'create' | 'update' | 'delete'>(null)
 
+    // estados para el PDF
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploadingDoc, setUploadingDoc] = useState(false)
+  const [uploadedPdfUrl, setUploadedPdfUrl] = useState<string | null>(null)
+
   const carreras = modalidad ? (CARRERAS_POR_MODALIDAD[modalidad] ?? []) : []
   const asignaturas =
     modalidad && carrera && grado
@@ -147,26 +152,70 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
   })
 
   const handleSubmit = async () => {
-    const err = validate()
-    if (err) { toast.error(err); return }
-    setSubmitting('create')
-    try {
-      const res = await fetch('/api/attendance', {
+  const err = validate()
+  if (err) { toast.error(err); return }
+  setSubmitting('create')
+
+  try {
+    let finalPdfUrl = uploadedPdfUrl
+
+    // 1) Si hay archivo seleccionado y aún no subido, lo subimos primero
+    if (selectedFile && !finalPdfUrl) {
+      if (selectedFile.type !== 'application/pdf') {
+        toast.error('Solo se permiten archivos PDF.')
+        setSubmitting(null)
+        return
+      }
+      const maxBytes = 10 * 1024 * 1024 // 10 MB
+      if (selectedFile.size > maxBytes) {
+        toast.error('El archivo es muy grande (máx 10 MB).')
+        setSubmitting(null)
+        return
+      }
+
+      setUploadingDoc(true)
+
+      const resUpload = await fetch(`/api/upload?filename=${encodeURIComponent(selectedFile.name)}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildPayload()),
+        body: selectedFile,
       })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data?.error || 'Error al registrar.')
-      toast.success('Registro guardado correctamente.')
-      resetForm()
-      onChanged?.()
-    } catch (e: any) {
-      toast.error(e?.message || 'No se pudo guardar el registro.')
-    } finally {
-      setSubmitting(null)
+
+      const uploadData = await resUpload.json().catch(() => ({}))
+      setUploadingDoc(false)
+
+      if (!resUpload.ok || uploadData?.error) {
+        toast.error(uploadData?.error || 'Error al subir PDF.')
+        setSubmitting(null)
+        return
+      }
+
+      finalPdfUrl = uploadData.url
+      setUploadedPdfUrl(finalPdfUrl)
+      toast.success('PDF subido correctamente.')
     }
+
+    // 2) Creamos el payload y guardamos el registro (incluyendo pdfUrl)
+    const payload = { ...buildPayload(), pdfUrl: finalPdfUrl ?? null }
+    const res2 = await fetch('/api/attendance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const data2 = await res2.json().catch(() => ({}))
+    if (!res2.ok) throw new Error(data2?.error || 'Error al registrar.')
+
+    toast.success('Registro guardado correctamente.')
+    resetForm()
+    setSelectedFile(null)
+    setUploadedPdfUrl(null)
+    onChanged?.()
+  } catch (e: any) {
+    toast.error(e?.message || 'No se pudo guardar el registro.')
+  } finally {
+    setUploadingDoc(false)
+    setSubmitting(null)
   }
+}
 
   const handleUpdateLast = async () => {
     const err = validate()
@@ -361,6 +410,50 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
             ))}
           </div>
         </div>
+
+        {/* Bloque para subir PDF */}
+        <div className={fieldWrap}>
+          <SectionLabel icon={PencilLine}>Adjuntar Reporte PDF (opcional)</SectionLabel>
+          <Input
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+            className="mt-1 bg-white"
+          />
+
+          {selectedFile && (
+            <div className="mt-2 flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-[#101F36] truncate max-w-[200px]">
+                  {selectedFile.name}
+                </span>
+                <span className="text-xs text-gray-500">
+                  ({(selectedFile.size / 1024).toFixed(0)} KB)
+                </span>
+              </div>
+              {uploadingDoc && (
+                <span className="flex items-center gap-2 text-sm text-blue-600 font-medium">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Subiendo archivo...
+                </span>
+              )}
+            </div>
+          )}
+
+          {uploadedPdfUrl && (
+            <div className="mt-2">
+              <a 
+                href={uploadedPdfUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-sm text-green-600 font-bold underline flex items-center gap-1"
+              >
+                <Save className="h-3 w-3" /> PDF listo para guardar
+              </a>
+            </div>
+          )}
+        </div>
+
 
         <div className={`${fieldWrap} md:col-span-2`}>
           <SectionLabel icon={PencilLine}>Observaciones</SectionLabel>
