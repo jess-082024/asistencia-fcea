@@ -178,6 +178,7 @@ export interface AttendanceRecord {
   presentes: number
   ausentes: number
   observaciones: string | null
-  createdAt: string
+  createdAt?: string | null
+  pdfUrl?: string | null
   updatedAt: string
 }
