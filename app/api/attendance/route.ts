@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
       presentes,
       observaciones,
       carnetAusentes,
+      pdfUrl // <-- añadimos aquí
     } = body ?? {}
 
     if (
@@ -116,6 +117,7 @@ export async function POST(req: NextRequest) {
         ausentes: insc - pres,
         observaciones: observationsToNull(observaciones),
         carnetausentes: carnets,
+        pdfUrl: pdfUrl || null, // <-- GUARDA LA URL AQUÍ
       },
     })
 
