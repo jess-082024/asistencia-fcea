@@ -24,27 +24,22 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
-    // Workbook & sheet
     const wb = new ExcelJS.Workbook()
     const ws = wb.addWorksheet('Asistencia')
 
-    // Paleta (ARGB)
-    const colorDark = 'FF101F36' // header oscuro
-    const colorAccent = 'FFE3AE50' // acento dorado
-    const colorAlt = 'FFF4F2F0' // zebra alterna
-    const colorLight = 'FFD1CCC7' // no usado directamente, pero disponible
+    const colorDark = 'FF101F36'
+    const colorAlt = 'FFF4F2F0'
 
-    // Título (fila 1) - opcional
-    ws.mergeCells('A1:J1')
+    // Título
+    ws.mergeCells('A1:L1') // Aumentado a L por las nuevas columnas
     const titleCell = ws.getCell('A1')
     titleCell.value = 'Registro de Asistencia - Facultad de Ciencias Económicas y Administrativas'
     titleCell.alignment = { vertical: 'middle', horizontal: 'center' }
     titleCell.font = { size: 13, bold: true, color: { argb: colorDark } }
 
-    // fila en blanco separadora
     ws.addRow([])
 
-    // Encabezado (fila 3)
+    // Encabezados (Añadido Carnets y Archivo)
     const header = [
       'Fecha',
       'Modalidad',
@@ -56,10 +51,12 @@ export async function GET() {
       'Presentes',
       'Ausentes',
       'Observaciones',
+      'Carnets Ausentes',
+      'Archivo PDF'
     ]
     const headerRow = ws.addRow(header)
 
-    // Column widths
+    // Configuración de columnas
     ws.columns = [
       { key: 'fecha', width: 12 },
       { key: 'modalidad', width: 18 },
@@ -71,23 +68,23 @@ export async function GET() {
       { key: 'presentes', width: 10 },
       { key: 'ausentes', width: 10 },
       { key: 'observaciones', width: 40 },
+      { key: 'carnets', width: 35 },
+      { key: 'archivo', width: 40 },
     ]
 
-    // Estilos del encabezado
     headerRow.eachCell((cell) => {
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
       cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorDark } }
-      cell.border = {
-        top: { style: 'thin' },
-        left: { style: 'thin' },
-        bottom: { style: 'thin' },
-        right: { style: 'thin' },
-      }
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } }
     })
 
-    // Agregar filas con formato y zebra
     records.forEach((r, i) => {
+      // Convertir el array de carnetausentes a una sola cadena de texto separada por comas
+      const carnetsTexto = Array.isArray(r.carnetausentes) ? r.carnetausentes.join(', ') : '';
+      // @ts-ignore (por si pdfUrl aún no se refleja en los tipos de Prisma)
+      const pdfLink = r.pdfUrl || '';
+
       const row = ws.addRow([
         fmtFecha(r.fechaClase),
         r.modalidad ?? '',
@@ -99,12 +96,13 @@ export async function GET() {
         r.presentes ?? 0,
         r.ausentes ?? 0,
         r.observaciones ?? '',
+        carnetsTexto,
+        pdfLink
       ])
 
       const isAlt = i % 2 === 0
       row.eachCell((cell, colNumber) => {
-        // Observaciones: wrap, left; números: center
-        if (colNumber === 10) {
+        if (colNumber === 10 || colNumber === 11) { // Observaciones y Carnets
           cell.alignment = { wrapText: true, vertical: 'top', horizontal: 'left' }
         } else if (colNumber >= 7 && colNumber <= 9) {
           cell.alignment = { horizontal: 'center', vertical: 'middle' }
@@ -112,52 +110,39 @@ export async function GET() {
           cell.alignment = { vertical: 'middle', horizontal: 'left' }
         }
 
-        // Zebra fill
         if (isAlt) {
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorAlt } }
         }
-
-        // Bordes sutiles
-        cell.border = {
-          top: { style: 'hair' },
-          left: { style: 'hair' },
-          bottom: { style: 'hair' },
-          right: { style: 'hair' },
-        }
+        cell.border = { top: { style: 'hair' }, left: { style: 'hair' }, bottom: { style: 'hair' }, right: { style: 'hair' } }
       })
 
-      // Colorear presentes/ausentes
+      // Colorear números
       const presentesCell = row.getCell(8)
       const ausentesCell = row.getCell(9)
-      if (typeof r.presentes === 'number' && r.presentes > 0) {
-        presentesCell.font = { color: { argb: 'FF0A8A0A' }, bold: true } // verde
-      }
-      if (typeof r.ausentes === 'number' && r.ausentes > 0) {
-        ausentesCell.font = { color: { argb: 'FFB00020' }, bold: true } // rojo
+      if (r.presentes > 0) presentesCell.font = { color: { argb: 'FF0A8A0A' }, bold: true }
+      if (r.ausentes > 0) ausentesCell.font = { color: { argb: 'FFB00020' }, bold: true }
+
+      // Convertir la celda del PDF en un clicable real
+      if (pdfLink) {
+        const fileCell = row.getCell(12)
+        fileCell.value = { text: 'Ver Reporte', hyperlink: pdfLink }
+        fileCell.font = { color: { argb: 'FF0000FF' }, underline: true }
       }
     })
 
-    // Congelar encabezado (título + header)
     ws.views = [{ state: 'frozen', ySplit: 3 }]
+    ws.properties.defaultRowHeight = 22
 
-    // Altura por defecto
-    ws.properties.defaultRowHeight = 20
-
-    // (Opcional) Pie de página o fila resumen: puedes agregar aquí si lo deseas
-
-    // Generar buffer
     const buffer = await wb.xlsx.writeBuffer()
-
     return new NextResponse(Buffer.from(buffer), {
       status: 200,
       headers: {
-        'Content-Type':
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': 'attachment; filename="asistencia_fcea.xlsx"',
       },
     })
   } catch (error) {
-    console.error('GET /api/attendance/export error:', error)
-    return NextResponse.json({ error: 'No se pudo exportar los datos.' }, { status: 500 })
+    console.error('Error exportando:', error)
+    return NextResponse.json({ error: 'Fallo al exportar excel' }, { status: 500 })
   }
 }
