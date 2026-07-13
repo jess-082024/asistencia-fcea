@@ -52,7 +52,7 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
   const [carnetsAusentes, setCarnetsAusentes] = useState<string[]>([])
   const [submitting, setSubmitting] = useState<null | 'create' | 'update' | 'delete'>(null)
 
-    // estados para el PDF
+  // estados para el PDF
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploadingDoc, setUploadingDoc] = useState(false)
   const [uploadedPdfUrl, setUploadedPdfUrl] = useState<string | null>(null)
@@ -63,15 +63,10 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
       ? (ASIGNATURAS[modalidad]?.[carrera]?.[grado] ?? [])
       : []
 
-  // <-- Punto 3: derivar los grados disponibles desde ASIGNATURAS si existen,
-  // fallback a GRADOS global si no hay definición para la combinación seleccionada.
-  // Versión mejorada que ignora espacios y errores de escritura
   const gradosDisponibles = useMemo(() => {
-    // Regla directa: Si es presencial, solo 4 años. Si es semi, 5 años.
     if (modalidad === 'Modalidad Presencial') {
       return ['Primer año', 'Segundo año', 'Tercer año', 'Cuarto año']
     }
-    // Para cualquier otro caso (como Semipresencial)
     return ['Primer año', 'Segundo año', 'Tercer año', 'Cuarto año', 'Quinto año']
   }, [modalidad])
 
@@ -147,75 +142,112 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
     asignatura: asignatura.trim(),
     inscritos: parseInt(inscritos, 10),
     presentes: parseInt(presentes, 10),
-    observaciones: observaciones.trim() || null,
+    observaciones: observationsToNullIfEmpty(observaciones),
     carnetAusentes: carnetsAusentes, // ahora es string[]
   })
 
-  const handleSubmit = async () => {
-  const err = validate()
-  if (err) { toast.error(err); return }
-  setSubmitting('create')
+  function observationsToNullIfEmpty(v: string) {
+    const s = (v ?? '').toString().trim()
+    return s ? s : null
+  }
 
-  try {
-    let finalPdfUrl = uploadedPdfUrl
+  // ---- Upload helper: sube el archivo y devuelve la URL normalizada ----
+  async function uploadFile(file: File): Promise<string | null> {
+    const res = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+      method: 'POST',
+      body: file,
+    })
 
-    // 1) Si hay archivo seleccionado y aún no subido, lo subimos primero
-    if (selectedFile && !finalPdfUrl) {
-      if (selectedFile.type !== 'application/pdf') {
-        toast.error('Solo se permiten archivos PDF.')
-        setSubmitting(null)
-        return
-      }
-      const maxBytes = 10 * 1024 * 1024 // 10 MB
-      if (selectedFile.size > maxBytes) {
-        toast.error('El archivo es muy grande (máx 10 MB).')
-        setSubmitting(null)
-        return
-      }
+    const data = await res.json().catch(() => ({}))
+    console.log('uploadData:', data)
 
-      setUploadingDoc(true)
-
-      const resUpload = await fetch(`/api/upload?filename=${encodeURIComponent(selectedFile.name)}`, {
-        method: 'POST',
-        body: selectedFile,
-      })
-
-      const uploadData = await resUpload.json().catch(() => ({}))
-      setUploadingDoc(false)
-
-      if (!resUpload.ok || uploadData?.error) {
-        toast.error(uploadData?.error || 'Error al subir PDF.')
-        setSubmitting(null)
-        return
-      }
-
-      finalPdfUrl = uploadData.url
-      setUploadedPdfUrl(finalPdfUrl)
-      toast.success('PDF subido correctamente.')
+    // intentar normalizar distintas formas de respuesta
+    if (!res.ok) {
+      // si el endpoint devolvió un error, propaga la info
+      const message = data?.error || 'Error subiendo el archivo'
+      throw new Error(message)
     }
 
-    // 2) Creamos el payload y guardamos el registro (incluyendo pdfUrl)
-    const payload = { ...buildPayload(), pdfUrl: finalPdfUrl ?? null }
-    const res2 = await fetch('/api/attendance', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    const data2 = await res2.json().catch(() => ({}))
-    if (!res2.ok) throw new Error(data2?.error || 'Error al registrar.')
-
-    toast.success('Registro guardado correctamente.')
-    resetForm()
-    setSelectedFile(null)
-    setUploadedPdfUrl(null)
-    onChanged?.()
-  } catch (e: any) {
-    toast.error(e?.message || 'No se pudo guardar el registro.')
-  } finally {
-    setUploadingDoc(false)
-    setSubmitting(null)
+    const url = data?.url || data?.publicUrl || data?.raw?.url || data?.raw?.publicUrl || data?.raw?.key || null
+    return url
   }
-}
+
+  // ---- Manejo de envío (creación) ----
+  const handleSubmit = async () => {
+    const err = validate()
+    if (err) { toast.error(err); return }
+    setSubmitting('create')
+
+    try {
+      let finalPdfUrl = uploadedPdfUrl
+
+      // 1) Si hay archivo seleccionado y aún no subido, lo subimos primero
+      if (selectedFile && !finalPdfUrl) {
+        if (selectedFile.type !== 'application/pdf') {
+          toast.error('Solo se permiten archivos PDF.')
+          setSubmitting(null)
+          return
+        }
+        const maxBytes = 10 * 1024 * 1024 // 10 MB
+        if (selectedFile.size > maxBytes) {
+          toast.error('El archivo es muy grande (máx 10 MB).')
+          setSubmitting(null)
+          return
+        }
+
+        setUploadingDoc(true)
+        try {
+          finalPdfUrl = await uploadFile(selectedFile)
+        } catch (err: any) {
+          console.error('Error subiendo PDF:', err)
+          toast.error(err?.message || 'Error al subir PDF.')
+          setUploadingDoc(false)
+          setSubmitting(null)
+          return
+        } finally {
+          setUploadingDoc(false)
+        }
+
+        if (!finalPdfUrl) {
+          toast.error('No se obtuvo URL pública del PDF.')
+          setSubmitting(null)
+          return
+        }
+
+        setUploadedPdfUrl(finalPdfUrl)
+        toast.success('PDF subido correctamente.')
+      }
+
+      // 2) Creamos el payload y guardamos el registro (incluyendo pdfUrl)
+      const payload = { ...buildPayload(), pdfUrl: finalPdfUrl ?? null }
+      console.log('payload before POST:', payload)
+
+      const res2 = await fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      const data2 = await res2.json().catch(() => ({}))
+      console.log('POST response:', res2.status, data2)
+
+      if (!res2.ok) {
+        throw new Error(data2?.error || 'Error al registrar.')
+      }
+
+      toast.success('Registro guardado correctamente.')
+      resetForm()
+      setSelectedFile(null)
+      setUploadedPdfUrl(null)
+      onChanged?.()
+    } catch (e: any) {
+      console.error('Error en handleSubmit:', e)
+      toast.error(e?.message || 'No se pudo guardar el registro.')
+    } finally {
+      setUploadingDoc(false)
+      setSubmitting(null)
+    }
+  }
 
   const handleUpdateLast = async () => {
     const err = validate()
@@ -341,13 +373,11 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
           </Select>
         </div>
 
-
         <div className={fieldWrap}>
           <SectionLabel icon={CalendarDays}>Fecha de clase</SectionLabel>
           <Input type="date" value={fechaClase} onChange={(e) => setFechaClase(e.target.value)} />
         </div>
 
-        
         <div className={fieldWrap}>
           <SectionLabel icon={Users}>Cantidad inscritos</SectionLabel>
           <Input
@@ -453,7 +483,6 @@ export function AttendanceForm({ onChanged }: { onChanged?: () => void }) {
             </div>
           )}
         </div>
-
 
         <div className={`${fieldWrap} md:col-span-2`}>
           <SectionLabel icon={PencilLine}>Observaciones</SectionLabel>

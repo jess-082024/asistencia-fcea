@@ -1,20 +1,37 @@
-import { put } from '@vercel/blob'
-import { NextResponse } from 'next/server'
+import { put } from '@vercel/blob';
+import { NextResponse } from 'next/server';
+
+type PutResultLike = {
+  url?: string;
+  publicUrl?: string;
+  key?: string;
+  [k: string]: any;
+};
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const { searchParams } = new URL(request.url)
-  const filename = searchParams.get('filename') || `reporte_${Date.now()}.pdf`
+  const { searchParams } = new URL(request.url);
+  const filename = searchParams.get('filename');
+
+  if (!filename) {
+    return NextResponse.json({ error: 'Filename is required' }, { status: 400 });
+  }
 
   try {
-    // request.body contiene el File que enviamos desde el frontend
-    const blob = await put(filename, request.body!, {
-      access: 'public', // público porque lo seleccionaste así
-    })
+    if (!request.body) {
+      return NextResponse.json({ error: 'No file body' }, { status: 400 });
+    }
 
-    // blob incluye url, id, size, ...
-    return NextResponse.json(blob)
+    const blob = await put(filename, request.body, {
+      access: 'public',
+    });
+
+    // casteo seguro para evitar errores de tipos en TS
+    const raw = blob as PutResultLike;
+    const url = (raw.url || raw.publicUrl || raw.key) ?? null;
+
+    return NextResponse.json({ raw, url });
   } catch (error) {
-    console.error('Upload error:', error)
-    return NextResponse.json({ error: 'Error al subir reporte' }, { status: 500 })
+    console.error('Error al subir a Vercel Blob:', error);
+    return NextResponse.json({ error: 'Falló la subida al storage' }, { status: 500 });
   }
 }
