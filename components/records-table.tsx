@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import {
-  FileSpreadsheet, ChevronLeft, ChevronRight, Loader2, Inbox, RefreshCw,
+  FileSpreadsheet, ChevronLeft, ChevronRight, Loader2, Inbox, RefreshCw, FileText,
 } from 'lucide-react'
 import type { AttendanceRecord } from '@/lib/constants'
 
@@ -111,7 +111,7 @@ export function RecordsTable({ reloadKey }: { reloadKey: number }) {
     }
   }
 
-  const cols = ['Fecha', 'Modalidad', 'Carrera', 'Año', 'Semestre', 'Asignatura', 'Inscritos', 'Presentes', 'Ausentes', 'Carnets', 'Observaciones']
+  const cols = ['Fecha', 'Modalidad', 'Carrera', 'Año', 'Semestre', 'Asignatura', 'Inscritos', 'Presentes', 'Ausentes', 'Carnets', 'Observaciones', 'Reporte PDF']
 
   return (
     <motion.div
@@ -191,6 +191,21 @@ export function RecordsTable({ reloadKey }: { reloadKey: number }) {
                       <td className="px-3 py-3 text-center font-mono text-[#FD011B]">{r?.ausentes ?? 0}</td>
                       <td className="max-w-[260px] px-3 py-3 text-[#101F36]/70 break-words">{carnetsText}</td>
                       <td className="max-w-[260px] px-3 py-3 text-[#101F36]/70">{r?.observaciones || '—'}</td>
+                      <td className="px-3 py-3">
+                        {r?.pdfUrl ? (
+                          <a
+                            href={r.pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium underline"
+                          >
+                            <FileText className="h-4 w-4" />
+                            Ver PDF
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-xs italic">No adjunto</span>
+                        )}
+                      </td>
                     </tr>
                   )
                 })}
